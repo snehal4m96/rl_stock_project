@@ -1,0 +1,10 @@
+streamlit
+torch
+numpy
+pandas
+plotly
+reportlab
+pyotp
+SmartApi
+websocket-client
+logzero

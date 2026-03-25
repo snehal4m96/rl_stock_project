@@ -2,9 +2,7 @@ import streamlit as st
 import torch
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
-from SmartApi import SmartConnect
-import pyotp
+import yfinance as yf
 import plotly.graph_objects as go
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -35,40 +33,25 @@ else:
     """, unsafe_allow_html=True)
 
 # ==============================
-# 🔐 LOGIN
+# 🤖 MODEL
 # ==============================
 
-def get_client():
-    api_key = "4SAGtzzF"
-    client = SmartConnect(api_key)
-    totp = pyotp.TOTP("IRRXP5NG7QMRDWU6HH5HFCCBFU").now()
-    client.generateSession("S461287", "1624", totp)
-    return client
+class ActorCritic(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.shared = torch.nn.Sequential(
+            torch.nn.Linear(4,64),
+            torch.nn.ReLU()
+        )
+        self.actor = torch.nn.Sequential(
+            torch.nn.Linear(64,3),
+            torch.nn.Softmax(dim=-1)
+        )
+        self.critic = torch.nn.Linear(64,1)
 
-# ==============================
-# 📊 DATA
-# ==============================
-
-def get_data(client, token):
-    to_date = datetime.now()
-    from_date = to_date - timedelta(days=365*5)
-
-    params = {
-        "exchange": "NSE",
-        "symboltoken": token,
-        "interval": "ONE_DAY",
-        "fromdate": from_date.strftime("%Y-%m-%d %H:%M"),
-        "todate": to_date.strftime("%Y-%m-%d %H:%M")
-    }
-
-    data = client.getCandleData(params)
-
-    if data is None or 'data' not in data:
-        return None
-
-    df = pd.DataFrame(data['data'],
-                      columns=["date","open","high","low","close","volume"])
-    return df
+    def forward(self,x):
+        x = self.shared(x)
+        return self.actor(x), self.critic(x)
 
 # ==============================
 # 📈 BACKTEST
@@ -111,27 +94,6 @@ def backtest(prices, algo):
     return history, final_balance, win_rate
 
 # ==============================
-# 🤖 MODEL
-# ==============================
-
-class ActorCritic(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.shared = torch.nn.Sequential(
-            torch.nn.Linear(4,64),
-            torch.nn.ReLU()
-        )
-        self.actor = torch.nn.Sequential(
-            torch.nn.Linear(64,3),
-            torch.nn.Softmax(dim=-1)
-        )
-        self.critic = torch.nn.Linear(64,1)
-
-    def forward(self,x):
-        x = self.shared(x)
-        return self.actor(x), self.critic(x)
-
-# ==============================
 # 🚀 TITLE
 # ==============================
 
@@ -150,22 +112,24 @@ with col2:
     algo = st.selectbox("Select Algorithm",
                        ["Q-Learning","SARSA","DQN","Policy Gradient","Actor-Critic"])
 
-tokens = {
-    "RELIANCE":"2885",
-    "TCS":"11536",
-    "HDFC":"1333"
+# ==============================
+# 📊 DATA USING YFINANCE
+# ==============================
+
+ticker_map = {
+    "RELIANCE": "RELIANCE.NS",
+    "TCS": "TCS.NS",
+    "HDFC": "HDFCBANK.NS"
 }
 
-# ==============================
-# DATA FETCH
-# ==============================
+df = yf.download(ticker_map[stock], period="5y")
 
-client = get_client()
-df = get_data(client, tokens[stock])
-
-if df is None:
-    st.error("API Failed ❌")
+if df.empty:
+    st.error("Data fetch failed ❌")
     st.stop()
+
+df = df.reset_index()
+df.columns = ["date","open","high","low","close","volume"]
 
 prices = df["close"].values
 

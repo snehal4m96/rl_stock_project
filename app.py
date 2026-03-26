@@ -8,29 +8,30 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import tempfile
 
-# ==============================
-# 🌗 THEME TOGGLE
-# ==============================
-
 st.set_page_config(layout="wide")
 
-col_theme1, col_theme2 = st.columns([8,2])
+# ==============================
+# 🎨 CUSTOM CSS (PRO LOOK)
+# ==============================
 
-with col_theme2:
-    theme = st.radio("", ["🌞 Light", "🌙 Dark"], horizontal=True)
-
-if theme == "🌙 Dark":
-    st.markdown("""
-        <style>
-        .stApp { background-color: #0E1117; color: white; }
-        </style>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-        <style>
-        .stApp { background-color: white; color: black; }
-        </style>
-    """, unsafe_allow_html=True)
+st.markdown("""
+<style>
+.main {
+    background-color: #0E1117;
+}
+.card {
+    background-color: #1E222A;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.metric {
+    font-size: 24px;
+    font-weight: bold;
+    color: #00ADB5;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ==============================
 # 🤖 MODEL
@@ -94,26 +95,26 @@ def backtest(prices, algo):
     return history, final_balance, win_rate
 
 # ==============================
-# 🚀 TITLE
+# 🚀 HEADER
 # ==============================
 
-st.title("🚀 RL Trading Dashboard (Advanced)")
+st.title("🚀 AI Trading Dashboard (Pro Version)")
 
 # ==============================
-# 🔝 TOP FILTERS
+# 🔝 FILTERS
 # ==============================
 
 col1, col2 = st.columns(2)
 
 with col1:
-    stock = st.selectbox("Select Stock", ["RELIANCE","TCS","HDFC"])
+    stock = st.selectbox("📊 Stock", ["RELIANCE","TCS","HDFC"])
 
 with col2:
-    algo = st.selectbox("Select Algorithm",
+    algo = st.selectbox("🤖 Algorithm",
                        ["Q-Learning","SARSA","DQN","Policy Gradient","Actor-Critic"])
 
 # ==============================
-# 📊 DATA USING YFINANCE
+# 📊 DATA
 # ==============================
 
 ticker_map = {
@@ -122,52 +123,67 @@ ticker_map = {
     "HDFC": "HDFCBANK.NS"
 }
 
-df = yf.download(ticker_map[stock], period="5y")
-
-if df.empty:
-    st.error("Data fetch failed ❌")
-    st.stop()
-
-df = df.reset_index()
+df = yf.download(ticker_map[stock], period="5y").reset_index()
 df.columns = ["date","open","high","low","close","volume"]
 
 prices = df["close"].values
 
 # ==============================
-# 📊 CANDLESTICK
+# 📊 CANDLESTICK (PRO)
 # ==============================
-
-st.subheader("📊 Candlestick Chart")
 
 fig = go.Figure(data=[go.Candlestick(
     x=df["date"],
     open=df["open"],
     high=df["high"],
     low=df["low"],
-    close=df["close"]
+    close=df["close"],
+    increasing_line_color='green',
+    decreasing_line_color='red'
 )])
+
+fig.update_layout(template="plotly_dark", height=500)
 
 st.plotly_chart(fig, use_container_width=True)
 
 # ==============================
-# 📈 BACKTEST
+# 📈 BACKTEST CHART (PRO)
 # ==============================
 
 curve, final_balance, win_rate = backtest(prices, algo)
 
-col1, col2 = st.columns(2)
+fig2 = go.Figure()
+fig2.add_trace(go.Scatter(y=curve, mode='lines',
+                          line=dict(color='#00ADB5', width=3)))
 
-with col1:
-    st.subheader("📈 Algorithm Performance")
-    st.line_chart(curve)
+fig2.update_layout(template="plotly_dark",
+                   title="Algorithm Performance",
+                   height=400)
 
-with col2:
-    st.subheader("📊 Metrics")
-    st.metric("Final Balance", f"{round(final_balance,2)}")
-    st.metric("Win Rate", f"{round(win_rate,2)} %")
+st.plotly_chart(fig2, use_container_width=True)
 
 # ==============================
-# 🤖 AI SIGNAL
+# 💎 METRIC CARDS (PRO)
+# ==============================
+
+col1, col2, col3 = st.columns(3)
+
+col1.markdown(f"""
+<div class="card">
+<p>💰 Final Balance</p>
+<p class="metric">{round(final_balance,2)}</p>
+</div>
+""", unsafe_allow_html=True)
+
+col2.markdown(f"""
+<div class="card">
+<p>📊 Win Rate</p>
+<p class="metric">{round(win_rate,2)}%</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ==============================
+# 🤖 AI SIGNAL (PRO)
 # ==============================
 
 model = ActorCritic()
@@ -192,8 +208,12 @@ with torch.no_grad():
 
 signal = ["HOLD","BUY","SELL"][action]
 
-st.subheader("🎯 AI Decision")
-st.success(f"Signal: {signal} | Price: {price}")
+col3.markdown(f"""
+<div class="card">
+<p>🎯 Signal</p>
+<p class="metric">{signal}</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ==============================
 # 📄 PDF DOWNLOAD
@@ -205,7 +225,7 @@ def generate_pdf():
     styles = getSampleStyleSheet()
 
     content = [
-        Paragraph("RL Trading Report", styles['Title']),
+        Paragraph("AI Trading Report", styles['Title']),
         Paragraph(f"Stock: {stock}", styles['Normal']),
         Paragraph(f"Algorithm: {algo}", styles['Normal']),
         Paragraph(f"Final Balance: {final_balance}", styles['Normal']),
@@ -220,12 +240,3 @@ pdf_file = generate_pdf()
 
 with open(pdf_file, "rb") as f:
     st.download_button("📥 Download Report", f, file_name="report.pdf")
-
-# ==============================
-# 📉 TRAINING GRAPH
-# ==============================
-
-st.subheader("📉 Training Visualization")
-
-loss = np.random.random(100)
-st.line_chart(loss)

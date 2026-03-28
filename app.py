@@ -6,7 +6,7 @@ import plotly.express as px
 st.set_page_config(layout="wide")
 
 # -----------------------------
-# DARK MODE CSS + BIG METRICS
+# DARK MODE + STYLE
 # -----------------------------
 st.markdown("""
     <style>
@@ -21,11 +21,11 @@ st.markdown("""
         text-align: center;
     }
     .metric-title {
-        font-size: 20px;
+        font-size: 18px;
         color: gray;
     }
     .metric-value {
-        font-size: 35px;
+        font-size: 36px;
         font-weight: bold;
         color: #00ffcc;
     }
@@ -38,7 +38,7 @@ st.markdown("""
 st.title("🚀 RL Trading Dashboard")
 
 # -----------------------------
-# FILTERS (TOP)
+# FILTERS
 # -----------------------------
 col1, col2 = st.columns(2)
 
@@ -49,7 +49,7 @@ with col2:
     algo = st.selectbox("Select Algorithm", ["Q-Learning", "SARSA", "DQN", "A2C", "Policy Gradient"])
 
 # -----------------------------
-# FAKE DATA (Replace with your real)
+# SAMPLE DATA (Replace later)
 # -----------------------------
 np.random.seed(42)
 dates = pd.date_range(end=pd.Timestamp.today(), periods=200)
@@ -74,7 +74,25 @@ fig2 = px.line(x=dates, y=equity, title=f"{algo} Equity Curve")
 st.plotly_chart(fig2, use_container_width=True)
 
 # -----------------------------
-# 🆕 GRAPH 3: ALGORITHM COMPARISON
+# 🆕 GRAPH 3: TRAINING VISUALIZATION (FIXED)
+# -----------------------------
+st.subheader("🧠 Training Visualization")
+
+episodes = list(range(1, 101))
+rewards = np.cumsum(np.random.randn(100))  # simulate training rewards
+
+train_df = pd.DataFrame({
+    "Episode": episodes,
+    "Reward": rewards
+})
+
+fig_train = px.line(train_df, x="Episode", y="Reward",
+                    title="Training Reward Curve")
+
+st.plotly_chart(fig_train, use_container_width=True)
+
+# -----------------------------
+# 🆕 GRAPH 4: ALGORITHM COMPARISON
 # -----------------------------
 st.subheader("📊 Algorithm Comparison")
 
@@ -93,7 +111,7 @@ fig3 = px.bar(df_compare, x="Algorithm", y="Final Balance",
 st.plotly_chart(fig3, use_container_width=True)
 
 # -----------------------------
-# BIG METRICS SECTION
+# BIG METRICS
 # -----------------------------
 st.subheader("📌 Key Metrics")
 

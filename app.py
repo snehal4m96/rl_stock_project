@@ -7,12 +7,23 @@ import plotly.express as px
 st.set_page_config(layout="wide")
 
 # -----------------------------
-# 🎨 UI STYLE
+# 🎨 CLEAN DARK UI
 # -----------------------------
 st.markdown("""
 <style>
-body { background-color: #0e1117; color: white; }
+body {
+    background-color: #0e1117;
+    color: white;
+}
 
+/* FILTER */
+div[data-baseweb="select"] {
+    font-size: 18px !important;
+    border: 1px solid #333 !important;
+    border-radius: 8px !important;
+}
+
+/* METRICS */
 .metric-box {
     background-color: #1c1f26;
     padding: 25px;
@@ -31,14 +42,10 @@ body { background-color: #0e1117; color: white; }
     color: #00ffcc;
 }
 
-div[data-baseweb="select"] {
-    font-size: 18px !important;
-    border: 1px solid #333 !important;
-    border-radius: 8px !important;
+/* GAP */
+.big-gap {
+    margin-top: 35px;
 }
-
-.big-gap { margin-top: 35px; }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -53,15 +60,15 @@ st.title("🚀 RL Trading Dashboard")
 col1, col2 = st.columns(2)
 
 with col1:
-    stock = st.selectbox("📊 Stock", ["RELIANCE", "TCS", "HDFC"])
+    stock = st.selectbox("📊 Select Stock", ["RELIANCE", "TCS", "HDFC"])
 
 with col2:
-    algo = st.selectbox("🤖 Algorithm", ["Q-Learning", "SARSA", "DQN", "A2C", "Policy Gradient"])
+    algo = st.selectbox("🤖 Select Algorithm", ["Q-Learning", "SARSA", "DQN", "A2C", "Policy Gradient"])
 
 # -----------------------------
-# DATA (SIMULATION)
+# DATA (ALGO BASED CHANGE)
 # -----------------------------
-np.random.seed(hash(algo) % 1000)  # 👈 THIS IS MAGIC
+np.random.seed(hash(algo) % 1000)
 
 dates = pd.date_range(end=pd.Timestamp.today(), periods=200)
 
@@ -81,17 +88,19 @@ df.set_index("Date", inplace=True)
 equity = np.cumsum(np.random.randn(200)) + 10000
 
 # -----------------------------
-# 📌 CALCULATE METRICS (DYNAMIC)
+# 📌 METRICS (FULL FIXED)
 # -----------------------------
 final_balance = int(equity[-1])
+
 returns = ((final_balance - 10000) / 10000) * 100
 
-win_rate = np.random.randint(50, 80)
+# ✅ FIXED WIN RATE (NO 0.11% ISSUE)
+win_rate = np.random.uniform(50, 80)
 
 signal = "BUY" if returns > 0 else "SELL"
 
 # -----------------------------
-# 🔥 METRICS (NOW DYNAMIC)
+# 🔥 METRICS DISPLAY
 # -----------------------------
 st.subheader("📌 Key Metrics")
 
@@ -108,8 +117,8 @@ with c1:
 with c2:
     st.markdown(f"""
     <div class="metric-box">
-        <div class="metric-title">Return</div>
-        <div class="metric-value">{returns:.2f}%</div>
+        <div class="metric-title">Win Rate</div>
+        <div class="metric-value">{win_rate:.2f}%</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -125,7 +134,7 @@ with c3:
 st.markdown('<div class="big-gap"></div>', unsafe_allow_html=True)
 
 # -----------------------------
-# 🕯 CANDLE CHART
+# 🕯 CANDLESTICK CHART
 # -----------------------------
 st.subheader("🕯 Stock Candlestick Chart")
 
@@ -152,7 +161,7 @@ fig2.update_layout(template="plotly_dark")
 st.plotly_chart(fig2, use_container_width=True)
 
 # -----------------------------
-# 🧠 TRAINING GRAPH
+# 🧠 TRAINING VISUALIZATION
 # -----------------------------
 st.subheader("🧠 Training Visualization")
 
@@ -170,7 +179,7 @@ fig_train.update_layout(template="plotly_dark")
 st.plotly_chart(fig_train, use_container_width=True)
 
 # -----------------------------
-# 📊 COMPARISON
+# 📊 ALGORITHM COMPARISON
 # -----------------------------
 st.subheader("📊 Algorithm Comparison")
 
